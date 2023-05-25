@@ -174,6 +174,34 @@ bind_rows(rf_scored_train2, rf_scored_test2) %>%
   spec(event_label, .pred_class) %>% 
   mutate(fpr = 1 - .estimate)
 ```
+### Logistic Regression
+```
+options(yardstick.event_first = TRUE)
+
+log_scored_train <- predict(log_workflow, train, type = "prob") %>%
+  bind_cols(predict(log_workflow, train, type = "class")) %>%
+  mutate(part = "train") %>%
+  bind_cols(., train)
+
+log_scored_test <- predict(log_workflow, test, type = "prob") %>%
+  bind_cols(predict(log_workflow, test, type = "class")) %>%
+  mutate(part = "test") %>%
+  bind_cols(., test)
+
+bind_rows(log_scored_train, log_scored_test) %>%
+  group_by(part) %>%
+  metrics(event_label, .pred_fraud, estimate = .pred_class) %>%
+  filter(.metric %in% c('accuracy', 'roc_auc', "mn_log_loss")) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate)
+
+bind_rows(log_scored_train, log_scored_test) %>%
+  group_by(part) %>%
+  precision(event_label, .pred_class)
+
+bind_rows(log_scored_train, log_scored_test) %>%
+  group_by(part) %>%
+  recall(event_label, .pred_class)
+```
 ### Random Forest ROC
 ```
 bind_rows(rf_scored_train2, rf_scored_test2) %>%
@@ -203,4 +231,58 @@ rf_scored_test2 %>%
   labs(title = paste("Distribution of the Probabilty of FRAUD:", "RF Model"),
        x = ".pred_fraud",
        y = "count") 
+```
+### Decide Operational Range
+```
+operating_range <- rf_scored_test2 %>%
+  roc_curve(event_label, .pred_fraud) %>%
+  mutate(fpr = round((1 - specificity), 2),
+         tpr = round(sensitivity, 3),
+         score_threshold = round(.threshold, 3)) %>%
+  group_by(fpr) %>%
+  summarise(threshold = round(mean(score_threshold), 3),
+            tpr = mean(tpr)) %>%
+  filter(fpr <= 0.1)
+
+operating_range
+```
+#### What are the metrics at 5% false positive rate?
+```
+rf_scored_test2 %>%
+  mutate(fpr_5_pct = as.factor(if_else(.pred_fraud >= 0.362, "fraud", "legit"))) %>% 
+  precision(event_label, fpr_5_pct)
+
+rf_scored_test2 %>%
+  mutate(fpr_5_pct = as.factor(if_else(.pred_fraud >= 0.362, "fraud", "legit"))) %>% 
+  recall(event_label, fpr_5_pct)
+
+rf_workflow2 %>%
+  extract_fit_parsnip() %>%
+  vip()
+```
+#### Function to find precision at threshold
+```
+precision_funk <- function(threshold){
+  rf_scored_test2 %>%
+  mutate(fpr_5_pct = as.factor(if_else(.pred_fraud >= threshold, "fraud", "legit"))) %>% 
+  precision(event_label, fpr_5_pct) %>% print()
+  
+rf_scored_test2 %>%
+  mutate(fpr_5_pct = as.factor(if_else(.pred_fraud >= threshold, "fraud", "legit"))) %>% 
+  recall(event_label, fpr_5_pct) %>% print()
+}
+* precision at given threshold *
+precision_funk(threshold = 0.247)
+```
+### Confusion Matrix
+```
+rf_scored_train2 %>%
+  conf_mat(truth = event_label, estimate = .pred_class, dnn = c("Prediction", "Truth")) %>%
+  autoplot(type = "heatmap") +
+  labs(title = "Random Forest 2 Training Confusion Matrix")
+
+rf_scored_test2 %>%
+  conf_mat(truth = event_label, estimate = .pred_class, dnn = c("Prediction", "Truth")) %>%
+  autoplot(type = "heatmap") +
+  labs(title = "Random Forest 2 Testing Confusion Matrix")
 ```
