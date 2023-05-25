@@ -52,3 +52,4 @@ test <- testing(split)
 sprintf("Train PCT : %1.2f%%", nrow(train)/nrow(fraud) * 100)
 sprintf("Test PCT  : %1.2f%%", nrow(test)/nrow(fraud) * 100)
 ```
+![Picture1](https://github.com/dingy21/dingy21.github.io/assets/134649288/0a4739a2-96fb-4dff-88ac-621ed6ad6393)
