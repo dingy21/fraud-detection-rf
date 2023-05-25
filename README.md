@@ -222,6 +222,7 @@ bind_rows(rf_scored_train2, rf_scored_test2) %>%
              linetype = "longdash") +
   labs(title = "RF ROC Curve", x = "FPR(1 - specificity)", y = "TPR(recall)")
 ```
+![Picture2](https://github.com/dingy21/dingy21.github.io/assets/134649288/efb89b9b-c660-40aa-a5d5-6bfbbc0aa068)
 ### Histogram of Probability of Fraud
 ```
 rf_scored_test2 %>%
@@ -285,4 +286,26 @@ rf_scored_test2 %>%
   conf_mat(truth = event_label, estimate = .pred_class, dnn = c("Prediction", "Truth")) %>%
   autoplot(type = "heatmap") +
   labs(title = "Random Forest 2 Testing Confusion Matrix")
+```
+## Best Most Correct Predictions
+```
+# -- best most correct predictions
+top_tp <- rf_scored_test2 %>%
+  filter(.pred_class == event_label) %>%
+  filter(event_label == "fraud") %>%
+  slice_max(order_by = .pred_fraud, n = 10)
+```
+## Most Wrong False Positive Predictions
+```
+top_fp <- rf_scored_test2 %>%
+  filter(.pred_class != event_label) %>%
+  filter(event_label == "legit") %>%
+  slice_max(order_by = .pred_fraud, n = 10)
+```
+# Most Wrong False Negative Predictions
+```
+bottom_fn <- rf_scored_test2 %>%
+  filter(.pred_class != event_label) %>%
+  filter(event_label == "fraud") %>%
+  slice_min(order_by = .pred_fraud, n = 10)
 ```
