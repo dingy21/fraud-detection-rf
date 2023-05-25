@@ -303,7 +303,7 @@ top_fp <- rf_scored_test2 %>%
   filter(event_label == "legit") %>%
   slice_max(order_by = .pred_fraud, n = 10)
 ```
-# Most Wrong False Negative Predictions
+## Most Wrong False Negative Predictions
 ```
 bottom_fn <- rf_scored_test2 %>%
   filter(.pred_class != event_label) %>%
