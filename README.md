@@ -106,3 +106,101 @@ log_workflow %>%
   tidy() %>%
   mutate(across(where(is.numeric), round, 3))
 ```
+## Model Evaluation
+### Random Forest 1
+```
+options(yardstick.event_first = FALSE)
+
+rf_scored_train1 <- predict(rf_workflow1, train, type = "prob") %>%
+  bind_cols(predict(rf_workflow1, train, type = "class")) %>%
+  mutate(part = "train") %>%
+  bind_cols(., train)
+
+rf_scored_test1 <- predict(rf_workflow1, test, type = "prob") %>%
+  bind_cols(predict(rf_workflow1, test, type = "class")) %>%
+  mutate(part = "test") %>%
+  bind_cols(., test)
+
+bind_rows(rf_scored_train1, rf_scored_test1) %>%
+  group_by(part) %>%
+  metrics(event_label, .pred_fraud, estimate = .pred_class) %>%
+  filter(.metric %in% c('accuracy', 'roc_auc', "mn_log_loss")) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate)
+
+# precision 0.5
+bind_rows(rf_scored_train1, rf_scored_test1) %>%
+  group_by(part) %>%
+  precision(event_label, .pred_class)
+
+# recall 0.5
+bind_rows(rf_scored_train1, rf_scored_test1) %>%
+  group_by(part) %>%
+  recall(event_label, .pred_class)
+
+# spec
+bind_rows(rf_scored_train1, rf_scored_test1) %>%
+  group_by(part) %>%
+  spec(event_label, .pred_class) %>% 
+  mutate(fpr = 1 - .estimate)
+```
+### Random Forest 2
+```
+rf_scored_train2 <- predict(rf_workflow2, train, type = "prob") %>%
+  bind_cols(predict(rf_workflow2, train, type = "class")) %>%
+  mutate(part = "train") %>%
+  bind_cols(., train)
+
+rf_scored_test2 <- predict(rf_workflow2, test, type = "prob") %>%
+  bind_cols(predict(rf_workflow2, test, type = "class")) %>%
+  mutate(part = "test") %>%
+  bind_cols(., test)
+
+bind_rows(rf_scored_train2, rf_scored_test2) %>%
+  group_by(part) %>%
+  metrics(event_label, .pred_fraud, estimate = .pred_class) %>%
+  filter(.metric %in% c('accuracy', 'roc_auc', "mn_log_loss")) %>%
+  pivot_wider(names_from = .metric, values_from = .estimate)
+
+bind_rows(rf_scored_train2, rf_scored_test2) %>%
+  group_by(part) %>%
+  precision(event_label, .pred_class)
+
+bind_rows(rf_scored_train2, rf_scored_test2) %>%
+  group_by(part) %>%
+  recall(event_label, .pred_class)
+
+bind_rows(rf_scored_train2, rf_scored_test2) %>%
+  group_by(part) %>%
+  spec(event_label, .pred_class) %>% 
+  mutate(fpr = 1 - .estimate)
+```
+### Random Forest ROC
+```
+bind_rows(rf_scored_train2, rf_scored_test2) %>%
+  group_by(part) %>%
+  roc_curve(event_label, .pred_fraud) %>%
+  autoplot() +
+  geom_vline(xintercept = 0.0037, # 5% TPR 
+             color = "red",
+             linetype = "longdash") +
+  geom_vline(xintercept = 0.05,   # 5% FPR 
+             color = "red",
+             linetype = "longdash") +
+  geom_vline(xintercept = 0.25,   # 25% FPR 
+             color = "blue",
+             linetype = "longdash") +
+  geom_vline(xintercept = 0.75,   # 75% FPR 
+             color = "green",
+             linetype = "longdash") +
+  labs(title = "RF ROC Curve", x = "FPR(1 - specificity)", y = "TPR(recall)")
+```
+### Histogram of Probability of Fraud
+```
+rf_scored_test2 %>%
+  ggplot(aes(.pred_fraud, fill = event_label)) +
+  geom_histogram(bins = 50) +
+  geom_vline(xintercept = 0.5, color = "red") +
+  labs(title = paste("Distribution of the Probabilty of FRAUD:", "RF Model"),
+       x = ".pred_fraud",
+       y = "count") 
+```
