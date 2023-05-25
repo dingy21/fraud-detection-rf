@@ -276,7 +276,7 @@ rf_scored_test2 %>%
 * precision at given threshold *
 precision_funk(threshold = 0.247)
 ```
-### Confusion Matrix
+#### Confusion Matrix
 ```
 rf_scored_train2 %>%
   conf_mat(truth = event_label, estimate = .pred_class, dnn = c("Prediction", "Truth")) %>%
