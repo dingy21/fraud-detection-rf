@@ -67,3 +67,40 @@ model_recipe <- recipe(event_label ~ billing_state + currency + cvv + transactio
 
 bake(model_recipe %>% prep(), train %>% sample_n(1000))
 ```
+## Model Workflow
+```
+***random forest 1***
+rf_model1 <- rand_forest(trees = 100, min_n = 20) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "permutation")
+
+rf_workflow1 <- workflow() %>%
+  add_recipe(model_recipe) %>%
+  add_model(rf_model1) %>%
+  fit(train)
+
+***random forest 2***
+rf_model2 <- rand_forest(trees = 200, min_n = 10) %>%
+  set_mode("classification") %>%
+  set_engine("ranger", importance = "permutation")
+
+rf_workflow2 <- workflow() %>%
+  add_recipe(model_recipe) %>%
+  add_model(rf_model2) %>%
+  fit(train)
+
+# logistic regression
+log_model <- logistic_reg() %>%
+  set_mode("classification") %>%
+  set_engine("glm")
+
+log_workflow <- workflow() %>%
+  add_recipe(model_recipe) %>%
+  add_model(log_model) %>%
+  fit(train)
+
+log_workflow %>%
+  extract_fit_parsnip() %>%
+  tidy() %>%
+  mutate(across(where(is.numeric), round, 3))
+```
