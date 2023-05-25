@@ -247,6 +247,7 @@ operating_range <- rf_scored_test2 %>%
 
 operating_range
 ```
+![Snipaste_2023-05-25_17-41-04](https://github.com/dingy21/fraud-detection-rf/assets/134649288/aa4b8447-058b-4946-8ca9-32eb83267609)
 #### What are the metrics at 5% false positive rate?
 ```
 rf_scored_test2 %>%
