@@ -53,4 +53,16 @@ test <- testing(split)
 sprintf("Train PCT : %1.2f%%", nrow(train)/nrow(fraud) * 100)
 sprintf("Test PCT  : %1.2f%%", nrow(test)/nrow(fraud) * 100)
 ```
+## Create Recipe
+```
+model_recipe <- recipe(event_label ~ billing_state + currency + cvv + transaction_type + transaction_env + account_age_days + transaction_amt + transaction_adj_amt, data = train) %>%
+  step_impute_median(all_numeric_predictors()) %>%
+  step_novel(all_nominal_predictors()) %>%
+  themis::step_downsample(event_label, under_ratio = 3) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_nzv(all_predictors()) %>%
+  step_other(all_nominal_predictors(), threshold = 0.01) %>%
+  step_dummy(all_nominal_predictors(), one_hot = TRUE)
 
+bake(model_recipe %>% prep(), train %>% sample_n(1000))
+```
