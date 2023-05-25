@@ -79,7 +79,8 @@ rf_workflow1 <- workflow() %>%
   add_model(rf_model1) %>%
   fit(train)
 ```
-***random forest 2***
+### Random Forest 2
+```
 rf_model2 <- rand_forest(trees = 200, min_n = 10) %>%
   set_mode("classification") %>%
   set_engine("ranger", importance = "permutation")
@@ -88,8 +89,9 @@ rf_workflow2 <- workflow() %>%
   add_recipe(model_recipe) %>%
   add_model(rf_model2) %>%
   fit(train)
-
-# logistic regression
+```
+### Logistic Regression
+```
 log_model <- logistic_reg() %>%
   set_mode("classification") %>%
   set_engine("glm")
